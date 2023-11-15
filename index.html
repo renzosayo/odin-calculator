@@ -6,36 +6,39 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Odin Calculator</h1>
+    <h1 class="title">Odin Calculator</h1>
     <div class="calculator">
-        <div class="output"></div>
+        <div class="output">
+            <h3 class="previous"></h3>
+            <h1 class="current">0</h1>
+        </div>
         <div class="buttons">
             <div class="column">
-                <button id="clear">C</button>
-                <button id="7">7</button>
-                <button id="4">4</button>
-                <button id="1">1</button>
-                <button id="0">0</button>
+                <button class="special" id="clear">C</button>
+                <button class="num" id="7">7</button>
+                <button class="num" id="4">4</button>
+                <button class="num" id="1">1</button>
+                <button class="num" id="0">0</button>
             </div>
             <div class="column">
-                <button id="backspace">←</button>
-                <button id="8">8</button>
-                <button id="5">5</button>
-                <button id="2">2</button>
+                <button class="special" id="backspace">←</button>
+                <button class="num" id="8">8</button>
+                <button class="num" id="5">5</button>
+                <button class="num" id="2">2</button>
                 <button id=".">.</button>
             </div>
             <div class="column">
-                <button id="power">x^</button>
-                <button id="9">9</button>
-                <button id="6">6</button>
-                <button id="3">3</button>
-                <button id="equal">=</button>
+                <button class="operator" value="power" id="power">x^</button>
+                <button class="num" id="9">9</button>
+                <button class="num" id="6">6</button>
+                <button class="num" id="3">3</button>
+                <button class="operator" value="equal" id="equal">=</button>
             </div>
             <div class="column">
-                <button id="divide">/</button>
-                <button id="multiply">x</button>
-                <button id="subtract">-</button>
-                <button id="add">+</button>
+                <button class="operator" value="divide" id="divide">/</button>
+                <button class="operator" value="multiply" id="multiply">x</button>
+                <button class="operator" value="subtract" id="subtract">-</button>
+                <button class="operator" value="add" id="add">+</button>
             </div>
         </div>      
     </div>
