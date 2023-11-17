@@ -2,9 +2,10 @@ const outputDiv = document.querySelector('.output');
 const outputCurrent = document.querySelector('.current');
 const outputPrevious = document.querySelector('.previous');
 const buttonBackspace = document.querySelector('#backspace');
+const buttonDecimal = document.querySelector('#decimal');
     buttonBackspace.addEventListener('click', () => changeCurrent(BACKSPACE));
 const buttonClear = document.querySelector('#clear');
-    buttonClear.addEventListener('click', clear);
+    buttonClear.addEventListener('click', allClear);
 
 const CONCAT = 'concat';
 const CLEAR = 'clear';
@@ -13,7 +14,7 @@ const BACKSPACE = 'backspace';
 
 const numberButtons = document.querySelectorAll('.num');
 for(let numberButton of numberButtons) {
-    numberButton.addEventListener('click', (event) => numPressed(event));
+    numberButton.addEventListener('click', numPressed);
 }
 
 const operatorButtons = document.querySelectorAll('.operator');
@@ -21,13 +22,28 @@ for(let operatorButton of operatorButtons) {
     operatorButton.addEventListener('click', (event) => operatorPressed(event));
 }
 
-let operationStatus = 'input';
+//mutation observer for decimal point
+function listenForDecimals(mutations) {
+    for(let mutation of mutations) {
+        let currentText = mutation.target.textContent;
+        if(currentText.includes('.')) {
+            buttonDecimal.removeEventListener('click', numPressed);
+            buttonDecimal.style.opacity = 0.4;
+        } else {
+            buttonDecimal.addEventListener('click', numPressed);
+            buttonDecimal.style.opacity = 1;
+        }
+    }
+}
+
+const decimalObserver = new MutationObserver(listenForDecimals);
+
+decimalObserver.observe(outputCurrent, { subtree: true, childList: true, characterData: true, });
+
 
 function numPressed(event) {
     let number = event.target.textContent;
-
-    if(operationStatus === 'done') clear();
-
+    if(outputPrevious.textContent.includes('=')) allClear();
     changeCurrent(CONCAT, number);
 }
 
@@ -45,9 +61,9 @@ function operatorPressed(buttonPressed) {
     if(currentOp === 'x^') currentOp = '^'; 
 
     // TO DO:
-    // Equals
-    // Adding . to numbers
-    // -> rounded numbers
+    // Equals - done
+    // Adding . to numbers - done
+    // -> rounded numbers 
 
     let newText = ``;
     let result = 0;
@@ -127,7 +143,7 @@ function changePrevious(operation, ...args) {
     }
 }
 
-function clear() {
+function allClear() {
     changeCurrent(CLEAR);
     changePrevious(CLEAR);
 }
