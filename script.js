@@ -98,7 +98,7 @@ function evaluate(expression) { //evaluate()'s the expression
         alert('Please avoid dividing by zero to maintain the stability of this realm. Thank you.');
     }
     else if(operationcurrentOp === '/') result = divide(expression[0], expression[2]);
-    else if(operationcurrentOp === 'x^') result = power(expression[0], expression[2]);
+    else if(operationcurrentOp === '^') result = power(expression[0], expression[2]);
 
     return result;
 }
