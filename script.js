@@ -2,9 +2,14 @@ const outputDiv = document.querySelector('.output');
 const outputCurrent = document.querySelector('.current');
 const outputPrevious = document.querySelector('.previous');
 const buttonBackspace = document.querySelector('#backspace');
-    buttonBackspace.addEventListener('click', () => changeCurrent('backspace'));
+    buttonBackspace.addEventListener('click', () => changeCurrent(BACKSPACE));
 const buttonClear = document.querySelector('#clear');
     buttonClear.addEventListener('click', clear);
+
+const CONCAT = 'concat';
+const CLEAR = 'clear';
+const UPDATE = 'update';
+const BACKSPACE = 'backspace';
 
 const numberButtons = document.querySelectorAll('.num');
 for(let numberButton of numberButtons) {
@@ -16,79 +21,115 @@ for(let operatorButton of operatorButtons) {
     operatorButton.addEventListener('click', (event) => operatorPressed(event));
 }
 
+let operationStatus = 'input';
+
 function numPressed(event) {
     let number = event.target.textContent;
-    if(!(outputPrevious.textContent === '')) changeCurrent('update', '');
-    changeCurrent('concat', number);
+
+    if(operationStatus === 'done') clear();
+
+    changeCurrent(CONCAT, number);
+}
+
+function switchOperator(newOperator) {
+    let outputPreviousContent = outputPrevious.textContent.split(' ');
+    if(outputPreviousContent.length > 1) {
+        outputPreviousContent[outputPreviousContent.length - 1] = newOperator;
+        changePrevious(UPDATE, outputPreviousContent.join(' '));
+    }
 }
 
 function operatorPressed(buttonPressed) {
 
-    let operation = buttonPressed.target.value;
-    let symbol = buttonPressed.target.textContent;
-    //statusPrevious 0 is empty, 2 is pending, 3 is complete 
-    let statusPrevious = outputPrevious.textContent.split(' ').length;
-    let expression = [];
+    let currentOp = buttonPressed.target.textContent; //currentOp is latest operation
+    if(currentOp === 'x^') currentOp = '^'; 
 
-    if(statusPrevious === 2) {
-        changePrevious('concat', ` ${outputCurrent.textContent}`);
-        expression = [...outputPrevious.textContent.split(' ')];
-        result = operate(expression, operation);
-        changeCurrent('update', result);
+    // TO DO:
+    // Equals
+    // Adding . to numbers
+    // -> rounded numbers
+
+    let newText = ``;
+    let result = 0;
+
+    if(isEmpty(outputPrevious.textContent) === false) {
+        let expression = [...outputPrevious.textContent.split(' '), outputCurrent.textContent];
+        result = evaluate(expression);
+        if(currentOp === '=') {
+            newText = `${expression.join(' ')} =`;
+        } else {     
+            newText = `${result} ${currentOp}`;
+        }
     } else {
-        changePrevious('update', `${outputCurrent.textContent} ${symbol}`);
+        newText = `${outputCurrent.textContent} ${currentOp}`;
     }
-
+    
+    if(currentOp === '-' && isEmpty(outputCurrent.textContent)) {
+        outputCurrent.textContent = '-';
+    } else if (outputCurrent.textContent === '0') {
+        switchOperator(currentOp);
+    } else {
+        changePrevious(UPDATE, `${newText}`);
+        currentOp === '=' ? changeCurrent(UPDATE, result) : changeCurrent(CLEAR);
+    }
 }
 
-function operate(expression, operation) {
-    //expression is [num1, operationSymbol, num2]
+function isEmpty(string) {
+    return (+string == 0 || string === '-' || string === '') ? true: false;
+}
 
+function operate(currentOp) { //separated for less messier operationPressed()
+    let expression = [...outputPrevious.textContent.split(' '), outputCurrent.textContent];
+    let result = evaluate(expression);
+    alert(expression);
+    changePrevious(UPDATE, `${result} ${currentOp}`);
+    changeCurrent(CLEAR);
+}
+
+function evaluate(expression) { //evaluate()'s the expression
+    //expression is [num1, operationcurrentOp, num2]
     let result = 0;
-    let operationSymbol = expression[1];
+    let operationcurrentOp = expression[1];
 
-    if(operation === 'add' || (operation === 'equal' && operationSymbol === '+')) 
-        result = add(+expression[0], +expression[2]);
-    else if (operation === 'subtract' || (operation === 'equal' && operationSymbol === '-'))
-        result = subtract(expression[0], expression[2]);
-    else if (operation === 'multiply' || (operation === 'equal' && operationSymbol === 'x'))
-        result = multiply(expression[0], expression[2]);
-    else if (operation === 'divide' || (operation === 'equal' && operationSymbol === '/'))
-        result = divide(expression[0], expression[2]);
-    else if (operation === 'power' || (operation === 'equal' && operationSymbol === 'x^'))
-        result = power(expression[0], expression[2]);
+    if(operationcurrentOp === '+') result = add(+expression[0], +expression[2]);
+    else if(operationcurrentOp === '-') result = subtract(expression[0], expression[2]);
+    else if(operationcurrentOp === 'x') result = multiply(expression[0], expression[2]);
+    else if(operationcurrentOp === '/' && expression[2] == 0) {
+        alert('Please avoid dividing by zero to maintain the stability of this realm. Thank you.');
+    }
+    else if(operationcurrentOp === '/') result = divide(expression[0], expression[2]);
+    else if(operationcurrentOp === 'x^') result = power(expression[0], expression[2]);
 
     return result;
 }
 
 function changeCurrent(operation, ...args) {
-    if(operation === 'concat') {
+    if(operation === CONCAT) {
         if(outputCurrent.textContent === "0") outputCurrent.textContent = "";
         outputCurrent.textContent += args[0];
-    } else if(operation === 'backspace') {
+    } else if(operation === BACKSPACE) {
         outputCurrent.textContent = outputCurrent.textContent.slice(0, outputCurrent.textContent.length - 1);
         if(outputCurrent.textContent === "") outputCurrent.textContent = "0";
-    } else if(operation === 'update') {
+    } else if(operation === UPDATE) {
         outputCurrent.textContent = args[0];
-    } else if(operation === 'clear') {
+    } else if(operation === CLEAR) {
         outputCurrent.textContent = '0';
     }
 }
 
-function changePrevious(operation, newText) {
-    if(operation === 'concat') {
-        outputPrevious.textContent += newText;
-    } else if(operation === 'update') {
-        outputPrevious.textContent = newText;
-    } else if(operation === 'clear') {
+function changePrevious(operation, ...args) {
+    if(operation === CONCAT) {
+        outputPrevious.textContent += args[0];
+    } else if(operation === UPDATE) {
+        outputPrevious.textContent = args[0];
+    } else if(operation === CLEAR) {
         outputPrevious.textContent = '';
     }
-    
 }
 
 function clear() {
-    changeCurrent('clear');
-    changePrevious('clear');
+    changeCurrent(CLEAR);
+    changePrevious(CLEAR);
 }
 
 function add(num1, num2) {
@@ -104,7 +145,11 @@ function multiply(num1, num2) {
 }
 
 function divide(num1, num2) {
-    return num1 / num2;
+    if(num2 === 0) {
+        alert('Please avoid dividing by zero to maintain the stability of this realm. Thank you.');
+    } else {
+        return num1 / num2;
+    }
 }
 
 function power(num1, num2) {
