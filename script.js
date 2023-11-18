@@ -71,6 +71,7 @@ function operatorPressed(buttonPressed) {
     // -> rounded numbers  
 
     let newText = '';
+    let newCurrentText = '0';
     let result = 0;
 
     //three possible scenario when pressing an operator,
@@ -85,35 +86,28 @@ function operatorPressed(buttonPressed) {
     //set flag depending on current state
     if(isEmpty(outputPrevious.textContent)) opState = START
     else if(!isEmpty(outputPrevious.textContent)) opState = PENDING;
-    else if(outputPrevious.textContent.includes('=')) opState = DONE;
+    //separated because it wont get detected
+    if(outputPrevious.textContent.includes('=')) opState = DONE;
 
     if(opState === START || opState === DONE) {
         if(currentOp !== '=') newText = `${outputCurrent.textContent} ${currentOp}`;
 
     } else if(opState === PENDING && isEmpty(outputCurrent.textContent)) {
-        currentOp !== '-' ? newText = switchOperator(currentOp) : changeCurrent(UPDATE, currentOp);
+        currentOp !== '-' ? newText = switchOperator(currentOp) : newCurrentText = '-'; //changeCurrent(UPDATE, currentOp);
         
     } else { //opState pending and outputCurrent isnt empty
         let expression = [...outputPrevious.textContent.split(' '), outputCurrent.textContent];
         result = evaluate(expression);
-        if(currentOp === '=') {
-            newText = `${expression.join(' ')} =`;
-        } else {     
+        if(currentOp !== '=') {
             newText = `${result} ${currentOp}`;
+        } else if(opState !== DONE) {     
+            newText = `${expression.join(' ')} =`;
         }
-    }
 
-    changePrevious(UPDATE, `${newText}`);
-    currentOp === '=' ? changeCurrent(UPDATE, result) : changeCurrent(CLEAR);
-
-    /*
-    if(currentOp === '-' && isEmpty(outputCurrent.textContent)) {
-        outputCurrent.textContent = '-';
-    } else {
-        changePrevious(UPDATE, `${newText}`);
-        currentOp === '=' ? changeCurrent(UPDATE, result) : changeCurrent(CLEAR);
     }
-    */
+    changePrevious(UPDATE, newText);
+    currentOp === '=' ? changeCurrent(UPDATE, result) : changeCurrent(UPDATE, newCurrentText);
+
 }
 
 function isEmpty(string) {
@@ -142,7 +136,23 @@ function evaluate(expression) { //evaluate()'s the expression
     else if(operationcurrentOp === '/') result = divide(expression[0], expression[2]);
     else if(operationcurrentOp === '^') result = power(expression[0], expression[2]);
 
-    return result;
+    return downsize(result);
+}
+
+//if greater than 10, fix only output 10 digits inc .
+
+function downsize(num) {
+    let length = String(num).length;
+    let wholeLength = String(num).split('.')[0].length;
+
+    if(length === wholeLength) return num;
+
+    console.log(length + ' ' + wholeLength);
+    if(length >= 10) {
+        return num.toFixed(10 - wholeLength);
+    } else {
+        return num.toFixed(length - 2);
+    }
 }
 
 function changeCurrent(operation, ...args) {
