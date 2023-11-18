@@ -12,6 +12,12 @@ const CLEAR = 'clear';
 const UPDATE = 'update';
 const BACKSPACE = 'backspace';
 
+const START = 'start';
+const PENDING = 'pending';
+const DONE = 'done';
+
+let opState = 'start';
+
 const numberButtons = document.querySelectorAll('.num');
 for(let numberButton of numberButtons) {
     numberButton.addEventListener('click', numPressed);
@@ -37,7 +43,6 @@ function listenForDecimals(mutations) {
 }
 
 const decimalObserver = new MutationObserver(listenForDecimals);
-
 decimalObserver.observe(outputCurrent, { subtree: true, childList: true, characterData: true, });
 
 
@@ -50,9 +55,9 @@ function numPressed(event) {
 function switchOperator(newOperator) {
     let outputPreviousContent = outputPrevious.textContent.split(' ');
     if(outputPreviousContent.length > 1) {
-        outputPreviousContent[outputPreviousContent.length - 1] = newOperator;
-        changePrevious(UPDATE, outputPreviousContent.join(' '));
+        outputPreviousContent[1] = newOperator;
     }
+    return outputPreviousContent.join(' ');
 }
 
 function operatorPressed(buttonPressed) {
@@ -63,12 +68,32 @@ function operatorPressed(buttonPressed) {
     // TO DO:
     // Equals - done
     // Adding . to numbers - done
-    // -> rounded numbers 
+    // -> rounded numbers  
 
-    let newText = ``;
+    let newText = '';
     let result = 0;
 
-    if(isEmpty(outputPrevious.textContent) === false) {
+    //three possible scenario when pressing an operator,
+    //evaluate, change operator, or just push current to prev
+
+    //empty => start, can receive '-' for negative numbers or positive numbers => call start
+    //1 + empty, can change op or input another number, can receive '-' for negative numbers => call pending
+    //  ^^^ if op is not '-', call switchOperator, else take '-' as sign for negative number
+    //  ^^^ 
+    //pressing '=' evaluates expression, if prev and curr arent empty, else do nothing => call done
+
+    //set flag depending on current state
+    if(isEmpty(outputPrevious.textContent)) opState = START
+    else if(!isEmpty(outputPrevious.textContent)) opState = PENDING;
+    else if(outputPrevious.textContent.includes('=')) opState = DONE;
+
+    if(opState === START || opState === DONE) {
+        if(currentOp !== '=') newText = `${outputCurrent.textContent} ${currentOp}`;
+
+    } else if(opState === PENDING && isEmpty(outputCurrent.textContent)) {
+        currentOp !== '-' ? newText = switchOperator(currentOp) : changeCurrent(UPDATE, currentOp);
+        
+    } else { //opState pending and outputCurrent isnt empty
         let expression = [...outputPrevious.textContent.split(' '), outputCurrent.textContent];
         result = evaluate(expression);
         if(currentOp === '=') {
@@ -76,22 +101,23 @@ function operatorPressed(buttonPressed) {
         } else {     
             newText = `${result} ${currentOp}`;
         }
-    } else {
-        newText = `${outputCurrent.textContent} ${currentOp}`;
     }
-    
+
+    changePrevious(UPDATE, `${newText}`);
+    currentOp === '=' ? changeCurrent(UPDATE, result) : changeCurrent(CLEAR);
+
+    /*
     if(currentOp === '-' && isEmpty(outputCurrent.textContent)) {
         outputCurrent.textContent = '-';
-    } else if (outputCurrent.textContent === '0') {
-        switchOperator(currentOp);
     } else {
         changePrevious(UPDATE, `${newText}`);
         currentOp === '=' ? changeCurrent(UPDATE, result) : changeCurrent(CLEAR);
     }
+    */
 }
 
 function isEmpty(string) {
-    return (+string == 0 || string === '-' || string === '') ? true: false;
+    return (+string == 0 || string === '-' || string === '') ? true : false;
 }
 
 function operate(currentOp) { //separated for less messier operationPressed()
