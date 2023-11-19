@@ -118,7 +118,12 @@ function operatorPressed(buttonPressed) {
 
     switch(currentOp) {
         case '=':
-            if(!isEmpty(prevText) && !prevText.includes('=')) operate(curText, prevText, currentOp);
+            if(!isEmpty(prevText) && !prevText.includes('=') 
+                && !isEmpty(curText)) operate(curText, prevText, currentOp);
+            //handle dividing by zero
+            else if(!isEmpty(prevText) && !prevText.includes('=') && isEmpty(curText)) {
+                alert('Please avoid dividing by zero to maintain the stability of this realm. Thank you');
+            }
             break;
         case '-':
             //if curr is empty, handle negative
@@ -170,16 +175,17 @@ function isEmpty(string) {
 }
 
 function evaluate(expression) { //evaluate()'s the expression
-    //expression is [num1, operationcurrentOp, num2]
+    //expression is [num1, currentOp, num2]
     let result = 0;
     let operationcurrentOp = expression[1];
 
     if(operationcurrentOp === '+') result = add(+expression[0], +expression[2]);
     else if(operationcurrentOp === '-') result = subtract(expression[0], expression[2]);
     else if(operationcurrentOp === 'x') result = multiply(expression[0], expression[2]);
-    // else if(operationcurrentOp === '/' && expression[2] == 0) {
-    //     alert('Please avoid dividing by zero to maintain the stability of this realm. Thank you.');
-    // }
+    //basically useless, kept for reference
+    else if(operationcurrentOp === '/' && expression[2] == 0) {
+        alert('Please avoid dividing by zero to maintain the stability of this realm. Thank you.');
+    }
     else if(operationcurrentOp === '/') result = divide(expression[0], expression[2]);
     else if(operationcurrentOp === '^') result = power(expression[0], expression[2]);
 
