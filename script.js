@@ -16,7 +16,7 @@ const START = 'start';
 const PENDING = 'pending';
 const DONE = 'done';
 
-let opState = 'start';
+let opState = '';
 
 const numberButtons = document.querySelectorAll('.num');
 for(let numberButton of numberButtons) {
@@ -45,7 +45,6 @@ function listenForDecimals(mutations) {
 const decimalObserver = new MutationObserver(listenForDecimals);
 decimalObserver.observe(outputCurrent, { subtree: true, childList: true, characterData: true, });
 
-
 function numPressed(event) {
     let number = event.target.textContent;
     if(outputPrevious.textContent.includes('=')) allClear();
@@ -57,69 +56,117 @@ function switchOperator(newOperator) {
     if(outputPreviousContent.length > 1) {
         outputPreviousContent[1] = newOperator;
     }
-    return outputPreviousContent.join(' ');
+    changePrevious(UPDATE, outputPreviousContent.join(' '));
 }
 
 function operatorPressed(buttonPressed) {
 
-    let currentOp = buttonPressed.target.textContent; //currentOp is latest operation
+    let currentOp = buttonPressed.target.textContent;
     if(currentOp === 'x^') currentOp = '^'; 
 
-    // TO DO:
-    // Equals - done
-    // Adding . to numbers - done
-    // -> rounded numbers  
+    // Earlier attempted solutions, open at your own risk
+    //four possible scenario when pressing an operator,
 
-    let newText = '';
-    let newCurrentText = '0';
-    let result = 0;
+    //evaluate, change operator, or just push current to prev, if - consider negative
 
-    //three possible scenario when pressing an operator,
-    //evaluate, change operator, or just push current to prev
-
-    //empty => start, can receive '-' for negative numbers or positive numbers => call start
-    //1 + empty, can change op or input another number, can receive '-' for negative numbers => call pending
+    //empty, input number, receive '-' for neg => call start
+    //1 + empty, change op, input number, receive '-' => call pending
     //  ^^^ if op is not '-', call switchOperator, else take '-' as sign for negative number
     //  ^^^ 
     //pressing '=' evaluates expression, if prev and curr arent empty, else do nothing => call done
 
     //set flag depending on current state
-    if(isEmpty(outputPrevious.textContent)) opState = START
-    else if(!isEmpty(outputPrevious.textContent)) opState = PENDING;
+    //if(isEmpty(outputPrevious.textContent)) opState = START;
+    //else opState = PENDING;
     //separated because it wont get detected
-    if(outputPrevious.textContent.includes('=')) opState = DONE;
+    //if(outputPrevious.textContent.includes('=')) opState = DONE;
 
-    if(opState === START || opState === DONE) {
-        if(currentOp !== '=') newText = `${outputCurrent.textContent} ${currentOp}`;
+    //catch dividing by zero
+    // if(currentOp === '=' 
+    //     && outputCurrent.textContent === '0' 
+    //     && outputPrevious.textContent.split(' ')[1] === '/')
+    //     alert('Please avoid dividing by zero to maintain the stability of this realm. Thank you.'); 
 
-    } else if(opState === PENDING && isEmpty(outputCurrent.textContent)) {
-        currentOp !== '-' ? newText = switchOperator(currentOp) : newCurrentText = '-'; //changeCurrent(UPDATE, currentOp);
-        
-    } else { //opState pending and outputCurrent isnt empty
-        let expression = [...outputPrevious.textContent.split(' '), outputCurrent.textContent];
-        result = evaluate(expression);
-        if(currentOp !== '=') {
-            newText = `${result} ${currentOp}`;
-        } else if(opState !== DONE) {     
-            newText = `${expression.join(' ')} =`;
-        }
+    // if(opState === START) {
+    //     if(currentOp !== '=') 
+    //         currentOp !== '-' ? newText = `${outputCurrent.textContent} ${currentOp}` 
+    //         : newCurrentText = '-';
 
+    // } else if(opState === PENDING && isEmpty(outputCurrent.textContent)) {
+    //     currentOp === '-' ? newCurrentText = '-' : newText = switchOperator(currentOp); //changeCurrent(UPDATE, currentOp);
+
+    // } else { //opState pending and outputCurrent isnt empty
+    //     let expression = [...outputPrevious.textContent.split(' '), outputCurrent.textContent];
+    //     result = evaluate(expression);
+    //     if(currentOp !== '=') {
+    //         newText = `${result} ${currentOp}`;
+    //     } else if(opState !== DONE) {
+    //         newText = `${expression.join(' ')} =`;
+    //     }
+
+    // }
+    // changePrevious(UPDATE, newText);
+    // currentOp === '=' ? changeCurrent(UPDATE, result) : changeCurrent(UPDATE, newCurrentText);
+    
+    //catch - and =
+    //work on - first, if curr is empty, use as negative sign, else, as operator
+    //work on
+
+    // !!!!! NOTE TO SELF: THIS ALL EXECUTES WHEN AN OPERATOR IS PRESSED !!!!!
+    let curText = outputCurrent.textContent;
+    let prevText = outputPrevious.textContent;
+
+    switch(currentOp) {
+        case '=':
+            if(!isEmpty(prevText) && !prevText.includes('=')) operate(curText, prevText, currentOp);
+            break;
+        case '-':
+            //if curr is empty, handle negative
+            //if((!isEmpty(prevText) && isEmpty(curText)) || (isEmpty(prevText) && isEmpty(curText))) {
+            isEmpty(curText) ? changeCurrent(UPDATE, '-') 
+                : operate(curText, prevText, currentOp);
+            break;
+        case '+':
+        case 'x':
+        case '/':
+        case '^':
+            operate(curText, prevText, currentOp);
+            break;
     }
-    changePrevious(UPDATE, newText);
-    currentOp === '=' ? changeCurrent(UPDATE, result) : changeCurrent(UPDATE, newCurrentText);
 
 }
+
+function operate(curText, prevText, currentOp) {
+    //if curr is empty but prev isnt, change operator
+    if(isEmpty(curText) && !isEmpty(prevText) && !prevText.includes('=')) {
+        switchOperator(currentOp);
+    }
+    //prev empty and curr isnt, push curText + ' ' + currentOp into prev
+    else if(isEmpty(prevText) && !isEmpty(curText)) {
+        changePrevious(UPDATE, `${curText} ${currentOp}`);
+        changeCurrent(CLEAR);
+    //if none empty, evaluate
+    } else if(!isEmpty(prevText) && !isEmpty(curText)) {
+        let expression = [...prevText.split(' '), curText];
+        let result = evaluate(expression);
+
+        let newPrevText = '';
+
+        if(currentOp !== '=') {
+            newPrevText = `${result} ${currentOp}`;
+            //changePrevious(UPDATE, `${result} ${currentOp}`);
+            changeCurrent(CLEAR);
+        } else {
+            newPrevText = `${expression.join(' ')} =`;
+            changeCurrent(UPDATE, result);
+        }
+        changePrevious(UPDATE, newPrevText);
+    }
+}
+
 
 function isEmpty(string) {
-    return (+string == 0 || string === '-' || string === '') ? true : false;
-}
-
-function operate(currentOp) { //separated for less messier operationPressed()
-    let expression = [...outputPrevious.textContent.split(' '), outputCurrent.textContent];
-    let result = evaluate(expression);
-    alert(expression);
-    changePrevious(UPDATE, `${result} ${currentOp}`);
-    changeCurrent(CLEAR);
+    return (+string == 0 || string === '') ? true : false;
 }
 
 function evaluate(expression) { //evaluate()'s the expression
@@ -130,9 +177,9 @@ function evaluate(expression) { //evaluate()'s the expression
     if(operationcurrentOp === '+') result = add(+expression[0], +expression[2]);
     else if(operationcurrentOp === '-') result = subtract(expression[0], expression[2]);
     else if(operationcurrentOp === 'x') result = multiply(expression[0], expression[2]);
-    else if(operationcurrentOp === '/' && expression[2] == 0) {
-        alert('Please avoid dividing by zero to maintain the stability of this realm. Thank you.');
-    }
+    // else if(operationcurrentOp === '/' && expression[2] == 0) {
+    //     alert('Please avoid dividing by zero to maintain the stability of this realm. Thank you.');
+    // }
     else if(operationcurrentOp === '/') result = divide(expression[0], expression[2]);
     else if(operationcurrentOp === '^') result = power(expression[0], expression[2]);
 
@@ -140,7 +187,6 @@ function evaluate(expression) { //evaluate()'s the expression
 }
 
 //if greater than 10, fix only output 10 digits inc .
-
 function downsize(num) {
     let length = String(num).length;
     let wholeLength = String(num).split('.')[0].length;
