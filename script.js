@@ -203,7 +203,7 @@ function downsize(num) {
     if(length >= 10) {
         return num.toFixed(10 - wholeLength);
     } else {
-        return num.toFixed(length - 2);
+        return Number(num.toFixed(length - 2));
     }
 }
 
